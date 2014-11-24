@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service id="remoting-service" 
+    class="flex.messaging.services.RemotingService">
+
+	<adapters>
+		<adapter-definition id="java-object" class="flex.messaging.services.remoting.adapters.JavaAdapter" default="true"/>
+	</adapters>
+
+	<default-channels>
+		<channel ref="my-amf"/>
+	</default-channels>
+
+	<destination id="userService">
+		<properties>
+			<factory>spring</factory>
+			<source>userDao</source>
+		</properties>
+	</destination>
+
+	<destination id="enumService">
+		<properties>
+			<factory>spring</factory>
+			<source>enumDao</source>
+		</properties>
+	</destination>
+	
+	<destination id="projectService">
+		<properties>
+			<factory>spring</factory>
+			<source>projectDao</source>
+		</properties>
+	</destination>
+	
+	<destination id="indicatorService">
+		<properties>
+			<factory>spring</factory>
+			<source>indicatorDao</source>
+		</properties>
+	</destination>
+
+	<destination id="helpTopicService">
+		<properties>
+			<factory>spring</factory>
+			<source>helpTopicDao</source>
+		</properties>
+	</destination>
+
+	<destination id="outlookService">
+		<properties>
+			<factory>spring</factory>
+			<source>outlookDao</source>
+		</properties>
+	</destination>
+	
+	<destination id="policyOptionService">
+		<properties>
+			<factory>spring</factory>
+			<source>policyOptionDao</source>
+		</properties>
+	</destination>
+	
+	<destination id="narrativeService">
+		<properties>
+			<factory>spring</factory>
+			<source>narrativeDao</source>
+		</properties>
+	</destination>    
+	
+	<destination id="contextService">
+		<properties>
+			<factory>spring</factory>
+			<source>contextDao</source>
+		</properties>
+	</destination>  	
+    
+    <destination id="experimentQueueService">
+        <properties>
+            <factory>spring</factory>
+            <source>experimentQueueService</source>
+        </properties>
+    </destination>   
+
+    <destination id="resultPresentationService">
+        <properties>
+            <factory>spring</factory>
+            <source>resultPresentationService</source>
+        </properties>
+    </destination>   
+    
+    <destination id="experimentQueueThreadService">
+        <properties>
+            <factory>spring</factory>
+            <source>experimentQueueThreadService</source>
+        </properties>
+    </destination>     
+    
+   	<destination id="picaService">
+		<properties>
+			<factory>spring</factory>
+			<source>picaDao</source>
+		</properties>
+	</destination>   
+    
+   	<destination id="picaService2">
+		<properties>
+			<factory>spring</factory>
+			<source>picaDao2</source>
+		</properties>
+	</destination>   
+    
+</service>

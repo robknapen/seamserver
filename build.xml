@@ -1,0 +1,248 @@
+<?xml version="1.0" ?>
+
+<!--  
+ * build.xml; Jun 5, 2009
+ * ===========================================================================
+ * Ant buildfile for use with integration build engine. 
+ * ===========================================================================
+ * This work has been carried out as part of the SEAMLESS Integrated Framework
+ * project, EU 6th Framework Programme, contract no. 010036-2 and/or as part
+ * of the SEAMLESS association.
+ *
+ * Copyright (c) 2009 The SEAMLESS Association.
+ *
+ * For more information: http://www.seamlessassociation.org;
+ * email: info@seamless-if.org
+ *
+ * The contents of this file is subject to the SEAMLESS Association License for 
+ * software infrastructure and model components Version 1.1 (the "License");
+ * you may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at http://www.seamlessassociation.org/License.htm
+ * 
+ * Software distributed under the License is distributed on an "AS IS"  basis, 
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for 
+ * the specific governing rights and limitations.
+ *
+ * The Initial Developers of the Original Code are:
+ * - Benny Jonsson; Lund University
+ * - Rob Knapen; Alterra, Wageningen UR
+ * ===========================================================================
+ * Contributor(s): N/A
+ * ===========================================================================
+-->
+
+<project name="gromit" basedir="." default="package">
+
+    <!-- project-specific variables -->
+    <property name="project.name" value="gromit"/>
+    <property name="package.name" value="${project.name}.war" />
+
+    <property environment="env" />
+
+    <property name="build.dir" value="build" />
+    <echo>Reading properties from build.${env.HOSTNAME} ...</echo>
+    <property file="build.${env.HOSTNAME}" />
+
+    <property name="lib.dir" value="lib" />
+    <property name="src.dir" value="src" />
+    <property name="resources.dir" value="resources" />
+    <property name="dest.dir" value="target" />
+
+    <!-- put everything in a temp folder with the right structure during the build -->
+    <property name="temp.dir" value="temp" />
+    <property name="temp.dir.flex" value="${temp.dir}/wallace"/>
+    <property name="temp.dir.web-inf" value="${temp.dir}/WEB-INF" />
+    <property name="temp.dir.lib" value="${temp.dir.web-inf}/lib" />
+    <property name="temp.dir.flex.config" value="${temp.dir.web-inf}/flex"/>
+    <property name="temp.dir.classes" value="${temp.dir.web-inf}/classes" />
+    <property name="temp.dir.meta-inf" value="${temp.dir}/META-INF" />
+    <property name="temp.dir.wallace" value="${temp.dir}/wallace"/>
+
+    <property name="package.file" value="${dest.dir}/${package.name}" />
+
+    <path id="build.class.path">
+        <fileset dir="lib">
+            <include name="**/*.jar" />
+        </fileset>
+    	<pathelement location="${catalina.home}/servlet.jar"/>
+    </path>
+	<property name="myclasspath" refid="build.class.path"/>
+	<echo message="Classpath set to: ${myclasspath} ..."/>
+
+    <target name="clean">
+        <echo>=== CLEAN GROMIT ===</echo>
+    	<mkdir dir="${dest.dir}" />
+        <delete>
+            <fileset dir="${dest.dir}" includes="**/*"/>
+        </delete>
+        <delete dir="${temp.dir}" />
+        <delete dir="${temp.dir.classes}" />
+        <delete dir="${temp.dir.meta-inf}" />
+        <delete dir="${temp.dir.web-inf}" />
+    </target>
+
+    <target name="prepare" depends="clean">
+        <echo>=== PREPARE GROMIT ===</echo>
+    	<mkdir dir="${resources.dir}"/>
+        <mkdir dir="${temp.dir}" />
+        <mkdir dir="${temp.dir.lib}" />
+    	<mkdir dir="${temp.dir.wallace}"/>
+        <mkdir dir="${temp.dir.meta-inf}" />
+        <mkdir dir="${temp.dir.web-inf}" />
+        <mkdir dir="${temp.dir.classes}" />
+    	<copy file="WebContent/META-INF/MANIFEST.MF" tofile="${temp.dir.meta-inf}/MANIFEST.MF" overwrite="true" />
+    	<copy file="WebContent/WEB-INF/web.xml" tofile="${temp.dir.web-inf}/web.xml" overwrite="true" />
+    	<copy file="WebContent/WEB-INF/spring-seamfaces-config.xml" tofile="${temp.dir.web-inf}/spring-seamfaces-config.xml" overwrite="true" />
+    	<copy file="WebContent/WEB-INF/flex/messaging-config.xml" tofile="${temp.dir.flex.config}/messaging-config.xml" overwrite="true" />
+    	<copy file="WebContent/WEB-INF/flex/proxy-config.xml" tofile="${temp.dir.flex.config}/proxy-config.xml" overwrite="true" />
+    	<copy file="WebContent/WEB-INF/flex/remoting-config.xml" tofile="${temp.dir.flex.config}/remoting-config.xml" overwrite="true" />
+    	<copy file="WebContent/WEB-INF/flex/services-config.xml" tofile="${temp.dir.flex.config}/services-config.xml" overwrite="true" />
+    	
+    </target>
+
+    <!-- COMPILE -->
+    <target name="build" depends="prepare">
+        <echo>=== BUILD GROMIT ===</echo>
+        <echo>Compiling ${src.dir} files ...</echo>
+        <javac debug="on" srcdir="${src.dir}" destdir="WebContent/WEB-INF/classes" includes="**/*">
+            <classpath refid="build.class.path" />
+        </javac>
+    </target>
+
+    <!-- PACKAGE -->
+    <target name="package">
+		<echo>=== PACKAGE GROMIT ===</echo>
+		<echo>Warning: make sure build target has been run before packaging!</echo>
+     
+		<!-- copy the config files -->
+		<copy todir="${temp.dir.wallace}">
+			<fileset dir="WebContent/wallace/">
+				<include name="**/**"/>
+			</fileset>
+		</copy>
+		<copy todir="${temp.dir.classes}">
+			<fileset dir="WebContent/WEB-INF/classes">
+			  <include name="**/*.class"/>
+			</fileset>
+		</copy>
+		<copy todir="${temp.dir.lib}">
+			<fileset dir="${lib.dir}">
+		 		<include name="**/*.jar"/>
+			</fileset>
+			<fileset dir="WebContent/WEB-INF/lib">
+		 		<include name="**/*.jar"/>
+		 	</fileset>
+		</copy>
+    	
+		<!-- with all resources in place, create the war file -->
+		<war destfile="${package.file}" webxml="${temp.dir.web-inf}/web.xml" basedir="${temp.dir}">
+			<lib dir="${lib.dir}" />
+			<fileset dir="WebContent">
+				<include name="**/**"/>
+			</fileset>
+		</war>
+    </target>
+	
+    <!-- INSTALL -->
+	
+	<target name="deploy" description="Deploy the application" depends="package">
+	    <echo>=== DEPLOYING GROMIT ===</echo>
+		<!-- Tomcat Ant deployment related tasks -->
+		<taskdef name="deploy" classname="org.apache.catalina.ant.DeployTask" classpath="lib/catalina-ant.jar" />
+		<taskdef name="undeploy" classname="org.apache.catalina.ant.UndeployTask" classpath="lib/catalina-ant.jar" />
+		<taskdef name="remove" classname="org.apache.catalina.ant.RemoveTask" classpath="lib/catalina-ant.jar" />
+
+		<echo>
+		==== SENDING WAR TO SERVER ===
+		${basedir}/${dest.dir}/${project.name}.war to ${url.manager}
+		contextpath: ${project.name} 
+		</echo>
+
+		<deploy 
+    		url="${url.manager}" 
+    		username="${username.manager}" 
+    		password="${password.manager}" 
+    		path="/${project.name}" 
+    		update="true" 
+    		war="${basedir}/${dest.dir}/${project.name}.war"
+    	/>    	
+    </target>
+
+	
+	<target name="compile-misc" description="Compile Misc" depends="prepare">
+			<javac srcdir="${seamchains.misc.dir}" destdir="${build.dir.classes}" debug="true" excludes="**/test/*.java">
+				<classpath refid="compile.classpath" />
+
+			</javac>
+		</target>
+		<target name="jar-misc" depends="compile-misc" >
+				<jar destfile="${basedir}/lib/seamfacestrings.jar"
+		       basedir="${build.dir.classes}" >
+				</jar>
+		</target>
+	
+	<target name="runChain">
+			<java classname="org.seamless_ip.environment.processing.chains.RunChain"
+			           fork="true"
+			           failonerror="true"
+			           maxmemory="128m"
+			           >
+					<arg value="27"/>
+			        <classpath>
+				        <fileset dir="WebContent/WEB-INF/lib">
+							<include name="*.jar"/>
+						</fileset>
+		                <fileset dir="../models/FSSIM-AM/lib">
+				         	<include name="*.jar" />
+				        </fileset>
+			        	<fileset dir="lib">
+			        		<include name="*.jar" />
+			        	</fileset>
+			        </classpath>
+			 </java>
+	</target>
+
+	<!-- Target for testing -->
+
+	<target name="check" description="Builds the output and validates it" depends="build">
+	    <path id="pmd-jar">
+	      <pathelement path="${pmd.home}/lib/pmd-4.2.5.jar" />
+	    </path>
+		<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask" classpathref="pmd-jar"/>
+		<pmd shortFilenames="true">
+			<ruleset>basic</ruleset>
+			<ruleset>unusedcode</ruleset>
+			<ruleset>logging-jakarta-commons</ruleset>
+			<formatter type="xml" toFile="pmd_report.xml" />
+			<fileset dir="${basedir}" includes="**/*.java">
+				<exclude name="**/obsolete/**" />
+				<exclude name="**/test/**" />
+			</fileset>
+		</pmd>
+
+	    <path id="findbugs-jar">
+	      <pathelement path="${findbugs.home}/lib/findbugs-ant.jar" />
+	    </path>
+		<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpathref="findbugs-jar"/>
+		<findbugs home="${findbugs.home}"
+              output="xml"
+              outputFile="findbugs_report.xml" >
+      		<sourcePath path="${basedir}/src/" />
+      		<class location="${basedir}/WebContent/WEB-INF/classes/" />
+		</findbugs>
+
+	    <path id="checkstyle-jar">
+	      <pathelement path="${checkstyle.home}/checkstyle-all-5.0.jar" />
+	    </path>
+		<taskdef resource="checkstyletask.properties" classpathref="checkstyle-jar"/>
+		<checkstyle config="${basedir}/lib/checkstyle.xml">
+			<fileset dir="${basedir}" includes="**/*.java">
+				<exclude name="**/obsolete/**" />
+				<exclude name="**/test/**" />
+			</fileset>
+			<formatter type="xml" toFile="checkstyle_report.xml" />
+		</checkstyle>
+		
+	</target>
+
+</project>

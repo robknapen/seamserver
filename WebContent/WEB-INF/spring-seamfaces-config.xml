@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--  
+ * spring-seamfaces-config.xml; Nov 27, 2009
+ * ===========================================================================
+ * Spring beans configuration file for use with seamfaces library. 
+ * ===========================================================================
+ * This work has been carried out as part of the SEAMLESS Integrated Framework
+ * project, EU 6th Framework Programme, contract no. 010036-2 and/or as part
+ * of the SEAMLESS association.
+ *
+ * Copyright (c) 2009 The SEAMLESS Association.
+ *
+ * For more information: http://www.seamlessassociation.org;
+ * email: info@seamless-if.org
+ *
+ * The contents of this file is subject to the SEAMLESS Association License for 
+ * software infrastructure and model components Version 1.1 (the "License");
+ * you may not use this file except in compliance with the License. You may 
+ * obtain a copy of the License at http://www.seamlessassociation.org/License.htm
+ * 
+ * Software distributed under the License is distributed on an "AS IS"  basis, 
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for 
+ * the specific governing rights and limitations.
+ *
+ * The Initial Developer of the Original Code is:
+ * - Rob Knapen; Alterra, Wageningen UR
+ * ===========================================================================
+ * Contributor(s): N/A
+ * ===========================================================================
+ -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- Connection to seamless database -->
+
+	<bean id="seamlessDataSource"
+		class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="org.postgresql.Driver" />
+		<property name="url"
+			value="jdbc:postgresql://data.seamless-if.org:5432/<database name>" />
+		<property name="username" value="********" />
+		<property name="password" value="********" />
+	</bean>
+
+	<!-- SessionFactory and TransactionManager using seamfaces -->
+
+	<bean id="seamfacesSessionFactory"
+		class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<property name="dataSource" ref="seamlessDataSource" />
+		<property name="mappingJarLocations">
+			<list>
+				<value>WEB-INF/lib/seamfaces-1.2.jar</value>
+			</list>
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">
+					org.hibernate.dialect.PostgreSQLDialect
+				</prop>
+				<prop key="hibernate.show_sql">false</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory">
+			<ref local="seamfacesSessionFactory" />
+		</property>
+	</bean>
+
+	<!-- Interceptor bean that handles logging -->
+
+	<bean id="logger" class="org.springframework.aop.support.RegexpMethodPointcutAdvisor">
+		<property name="advice">
+			<ref local="loggingInterceptor"/>
+      	</property>
+		<property name="patterns">
+			<value>.*</value>
+		</property>
+	</bean>
+
+	<bean id="loggingInterceptor" class="org.seamless_ip.services.dao.utils.LoggingInterceptor" />
+
+	<!-- Enumeration Data Access Object Configuration -->
+
+	<bean id="enumDaoTarget"
+		class="org.seamless_ip.services.dao.EnumDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="enumDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="enumDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED,readOnly</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+
+	<!-- User Data Access Object Configuration -->
+
+	<bean id="userDaoTarget"
+		class="org.seamless_ip.services.dao.UserDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="userDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="userDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Project Data Access Object Configuration -->
+
+	<bean id="projectDaoTarget"
+		class="org.seamless_ip.services.dao.ProjectDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+		<property name="userDao" ref="userDao" />
+	</bean>
+
+	<bean id="projectDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="projectDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Indicator Data Access Object Configuration -->
+
+	<bean id="indicatorDaoTarget"
+		class="org.seamless_ip.services.dao.IndicatorDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="indicatorDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="indicatorDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Indicator Value Data Access Object Configuration -->
+
+	<bean id="indicatorValueDaoTarget"
+		class="org.seamless_ip.services.dao.IndicatorValueDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="indicatorValueDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="indicatorValueDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED,readOnly</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Help Topic Data Access Object Configuration -->
+
+	<bean id="helpTopicDaoTarget"
+		class="org.seamless_ip.services.dao.HelpTopicDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="helpTopicDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="helpTopicDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED,readOnly</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Representative Farm Data Access Object Configuration -->
+
+	<bean id="representativeFarmDaoTarget"
+		class="org.seamless_ip.services.dao.RepresentativeFarmDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="representativeFarmDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="representativeFarmDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED,readOnly</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Narrative Data Access Object Configuration -->
+
+	<bean id="narrativeDaoTarget"
+		class="org.seamless_ip.services.dao.NarrativeDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="narrativeDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="narrativeDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Outlook Data Access Object Configuration -->
+
+	<bean id="outlookDaoTarget"
+		class="org.seamless_ip.services.dao.OutlookDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="outlookDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="outlookDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Policyoption Data Access Object Configuration -->
+
+	<bean id="policyOptionDaoTarget"
+		class="org.seamless_ip.services.dao.PolicyOptionDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="policyOptionDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="policyOptionDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!--  ExperimentQueue Data Access Object Configuration -->
+
+	<bean id="experimentQueueDao"
+		class="org.seamless_ip.services.dao.ExperimentQueueDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<!--  ExperimentRun Data Access Object Configuration -->
+
+	<bean id="experimentRunDao"
+		class="org.seamless_ip.services.dao.ExperimentRunDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="experimentDao"
+		class="org.seamless_ip.services.dao.ExperimentDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<!--  ExperimentQueueService BlazeDS Service -->
+
+	<bean id="experimentQueueServiceTarget"
+		class="org.seamless_ip.services.ExperimentQueueService">
+		<property name="experimentQueueDao" ref="experimentQueueDao" />
+		<property name="experimentRunDao" ref="experimentRunDao" />
+		<property name="experimentDao" ref="experimentDao" />
+	</bean>
+
+	<bean id="experimentQueueService"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="experimentQueueServiceTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!-- Context Data Access Object Configuration -->
+
+	<bean id="contextDaoTarget"
+		class="org.seamless_ip.services.dao.ContextDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+		<property name="representativeFarmDao" ref="representativeFarmDao" />
+	</bean>
+
+	<bean id="contextDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="contextDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+	<!--  ResultPresentationService configuration -->
+
+	<bean id="resultPresentationServiceTarget"
+		class="org.seamless_ip.services.ResultPresentationService">
+		<property name="projectDao" ref="projectDao" />
+		<property name="experimentDao" ref="experimentDao" />
+		<property name="indicatorDao" ref="indicatorDao" />
+		<property name="indicatorValueDao" ref="indicatorValueDao" />
+		<property name="enumDao" ref="enumDao" />
+	</bean>
+
+	<bean id="resultPresentationService"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="resultPresentationServiceTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+
+    <!-- SchedulerService -->
+
+    <bean id="schedulerService"
+        class="org.seamless_if.services.scheduler.SchedulerServiceImpl">
+    </bean>
+
+	<!--  ExperimentQueueThreadServices BlazeDS Service -->
+
+	<bean id="experimentQueueThreadService"
+		  class="org.seamless_ip.services.ExperimentQueueThreadServicesImpl">
+	</bean>
+	
+    <!-- PICA Data Access Object Configuration -->
+
+	<bean id="picaDaoTarget"
+		class="org.seamless_ip.services.dao.PicaDaoImpl">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="picaDao"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="picaDaoTarget" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+	
+    <!-- PICA Data Access Object Configuration -->
+
+	<bean id="picaDaoTarget2"
+		class="org.seamless_ip.services.dao.PicaDaoImpl2">
+		<property name="sessionFactory" ref="seamfacesSessionFactory" />
+	</bean>
+
+	<bean id="picaDao2"
+		class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="target" ref="picaDaoTarget2" />
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+		<property name="preInterceptors">
+			<list>				
+				<ref bean="logger"/>
+			</list>
+		</property>		
+	</bean>
+	
+</beans>
